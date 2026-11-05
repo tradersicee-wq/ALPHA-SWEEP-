@@ -1,0 +1,35 @@
+-- Track Live and Demo sub-accounts per user
+CREATE TABLE accounts (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID NOT NULL,
+    account_type VARCHAR(10) CHECK (account_type IN ('DEMO', 'LIVE')),
+    balance NUMERIC(12, 2) NOT NULL DEFAULT 10000.00,
+    equity NUMERIC(12, 2) NOT NULL DEFAULT 10000.00,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Track open positions running against live chart ticks
+CREATE TABLE positions (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    account_id UUID REFERENCES accounts(id) ON DELETE CASCADE,
+    symbol VARCHAR(15) NOT NULL, -- e.g., 'XAUUSD', 'NASDAQ', 'EURUSD'
+    direction VARCHAR(5) CHECK (direction IN ('BUY', 'SELL')),
+    lots NUMERIC(6, 2) NOT NULL,
+    entry_price NUMERIC(12, 5) NOT NULL,
+    take_profit NUMERIC(12, 5),
+    stop_loss NUMERIC(12, 5),
+    status VARCHAR(10) DEFAULT 'OPEN' CHECK (status IN ('OPEN', 'CLOSED'))
+);
+
+-- Track pending orders (Buy/Sell Stops)
+CREATE TABLE pending_orders (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    account_id UUID REFERENCES accounts(id) ON DELETE CASCADE,
+    symbol VARCHAR(15) NOT NULL,
+    order_type VARCHAR(15) CHECK (order_type IN ('BUY_STOP', 'SELL_STOP')),
+    trigger_price NUMERIC(12, 5) NOT NULL,
+    lots NUMERIC(6, 2) NOT NULL,
+    take_profit NUMERIC(12, 5),
+    stop_loss NUMERIC(12, 5),
+    status VARCHAR(10) DEFAULT 'PENDING' CHECK (status IN ('PENDING', 'TRIGGERED', 'CANCELLED'))
+);
